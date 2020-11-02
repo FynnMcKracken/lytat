@@ -1,74 +1,108 @@
 import 'package:bubble/bubble.dart';
 import 'package:flutter/material.dart';
-import 'package:lytatapp/navigation_drawer.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+import 'package:percent_indicator/percent_indicator.dart';
+
+import 'model/Chat.dart' as model;
+
 
 class Chat extends StatefulWidget {
-  Chat({Key key, @required this.name, @required this.lastSeen}) : super(key: key);
+  Chat({Key key, @required this.chat}) : super(key: key);
 
 
-  final String name;
-  final String lastSeen;
+  final model.Chat chat;
 
 
   @override
-  State<StatefulWidget> createState() => ChatState(lastSeen: lastSeen);
+  State<StatefulWidget> createState() => ChatState(chat: chat);
 }
 
 class ChatState extends State<Chat> {
-  ChatState({Key key, @required this.lastSeen});
+  ChatState({Key key, @required this.chat});
   final TextEditingController textEditingController = TextEditingController();
   final FocusNode focusNode = FocusNode();
-  String lastSeen;
+  model.Chat chat;
+  double _currentSliderValue = 2;
 
   Widget inputWidget() {
+
+    Widget timerWidget() {
+      if (chat.timeoutStart != null && chat.timeoutEnd != null && (chat.timeoutEnd?.isAfter(DateTime.now().toUtc()) ?? false)) {
+        return Padding(
+          padding: EdgeInsets.symmetric(vertical: 21.0, horizontal: 17.0),
+          child: new LinearPercentIndicator(
+            alignment: MainAxisAlignment.center,
+            lineHeight: 6.0,
+            percent: chat.getProgress(DateTime.now()),
+            linearStrokeCap: LinearStrokeCap.roundAll,
+            progressColor: Colors.lightBlue[700],
+            backgroundColor: Colors.blueGrey[900],
+          ),
+        );
+      } else {
+        return Slider(
+          value: _currentSliderValue,
+          min: 0,
+          max: 5,
+          divisions: 5,
+          label: _currentSliderValue.round().toString(),
+          onChanged: (double value) {
+            setState(() {
+              _currentSliderValue = value;
+            });
+          },
+        );
+      }
+    }
+
     return Material(
       type: MaterialType.card,
-      borderRadius: BorderRadius.circular(30),
+      borderRadius: BorderRadius.circular(25),
       color: Theme.of(context).primaryColor,
       child: Container(
-        padding: EdgeInsets.only(left: 20),
-        child: Row(
+        child: Column(
           children: <Widget>[
-
-            // Edit text
-            Flexible(
-              child: Container(
-                child: TextField(
-                  style: Theme.of(context).textTheme.bodyText2.copyWith(fontSize: 18),
-                  controller: textEditingController,
-                  decoration: InputDecoration.collapsed(
-                    hintText: 'Message',
-                    hintStyle: TextStyle(fontSize: 14, color: Colors.blueGrey[100].withAlpha(100)),
+            timerWidget(),
+            Row(
+              children: <Widget>[
+                // Edit text
+                Flexible(
+                  child: Container(
+                    padding: EdgeInsets.only(left: 20),
+                    child: TextField(
+                      style: Theme.of(context).textTheme.bodyText2.copyWith(fontSize: 18),
+                      controller: textEditingController,
+                      decoration: InputDecoration.collapsed(
+                        hintText: 'Message',
+                        hintStyle: TextStyle(fontSize: 14, color: Colors.blueGrey[100].withAlpha(100)),
+                      ),
+                      focusNode: focusNode,
+                    ),
                   ),
-                  focusNode: focusNode,
                 ),
-              ),
-            ),
 
-            // Send message button
-            IconButton(
-              constraints: BoxConstraints.expand(width: 48, height: 48),
-              icon: Icon(Icons.send),
-              onPressed: () => {
-                Fluttertoast.showToast(
-                    msg: "This is Center Short Toast",
-                    toastLength: Toast.LENGTH_SHORT,
-                    gravity: ToastGravity.CENTER,
-                    timeInSecForIosWeb: 1,
-                    backgroundColor: Colors.red,
-                    textColor: Colors.white,
-                    fontSize: 16.0)
-              },
-              color: Theme.of(context).accentColor,
-            ),
+                // Send message button
+                IconButton(
+                  constraints: BoxConstraints.expand(width: 48, height: 48),
+                  icon: Icon(Icons.send),
+                  onPressed: () => {
+                   /* Fluttertoast.showToast(
+                        msg: "This is Center Short Toast",
+                        toastLength: Toast.LENGTH_SHORT,
+                        gravity: ToastGravity.CENTER,
+                        timeInSecForIosWeb: 1,
+                        backgroundColor: Colors.red,
+                        textColor: Colors.white,
+                        fontSize: 16.0)*/
+                  },
+                  color: Theme.of(context).accentColor,
+                ),
+              ],
+            )
+          ]
 
-          ],
         ),
         width: double.infinity,
-        height: 50.0,
-        /*decoration: BoxDecoration(
-            color: Colors.blue),*/
+        //height: 102.0,
       ),
     );
   }
@@ -81,8 +115,8 @@ class ChatState extends State<Chat> {
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(widget.name, style: Theme.of(context).textTheme.headline6.copyWith(color: Colors.white),),
-              Text("last seen ${widget.lastSeen}", style: Theme.of(context).textTheme.bodyText2.copyWith(color: Colors.blueGrey[50]),),
+              Text(widget.chat.name, style: Theme.of(context).textTheme.headline6.copyWith(color: Colors.white),),
+              Text("last seen ${widget.chat.lastSeen}", style: Theme.of(context).textTheme.bodyText2.copyWith(color: Colors.blueGrey[50]),),
             ],
           ),
         ),

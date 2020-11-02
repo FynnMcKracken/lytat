@@ -2,8 +2,10 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:lytatapp/navigation_drawer.dart';
+import 'package:percent_indicator/percent_indicator.dart';
 
 import 'chat.dart';
+import 'model/Chat.dart' as model;
 
 
 class Home extends StatefulWidget {
@@ -46,37 +48,42 @@ class HomeBodyLayout extends StatelessWidget {
   }
 }
 
-enum ItemStates {
-  normal,
-  highlighted
-}
-
-class Item {
-  const Item({this.name, this.message, this.date, this.icon, this.state: ItemStates.normal});
-
-  final String name;
-  final String message;
-  final String date;
-  final IconData icon;
-  final ItemStates state;
-}
-
-
-
 class ItemLayout extends StatelessWidget {
   const ItemLayout(
       {Key key, this.onTap, @required this.item, this.selected: false}
       ) : super(key: key);
 
   final VoidCallback onTap;
-  final Item item;
+  final model.Chat item;
   final bool selected;
 
   @override
   Widget build(BuildContext context) {
     TextStyle nameStyle = Theme.of(context).textTheme.subtitle1.copyWith(fontWeight: FontWeight.w500);
     TextStyle infoStyle = Theme.of(context).textTheme.caption;
-    TextStyle messageStyle = item.state == ItemStates.normal ? Theme.of(context).textTheme.bodyText2.copyWith(color: Colors.grey[600]) : Theme.of(context).textTheme.bodyText2.copyWith(color: Theme.of(context).accentColor);
+    TextStyle messageStyle = item.state == model.ChatStates.normal ? Theme.of(context).textTheme.bodyText2.copyWith(color: Colors.grey[600]) : Theme.of(context).textTheme.bodyText2.copyWith(color: Theme.of(context).accentColor);
+
+    List<Widget> trailingBuilder() {
+      List<Widget> builder = [
+        Text(item.lastSeen, style: infoStyle),
+      ];
+
+      if (item.timeoutStart != null && item.timeoutEnd != null && (item.timeoutEnd?.isAfter(DateTime.now().toUtc()) ?? false)) {
+        builder.add(Spacer());
+        builder.add(new CircularPercentIndicator(
+            radius: 20.0,
+            lineWidth: 2.5,
+            animation: true,
+            percent: item.getProgress(DateTime.now()),
+            circularStrokeCap: CircularStrokeCap.round,
+            progressColor: Colors.lightBlue[700],
+            backgroundColor: Colors.blueGrey[800],
+        ));
+      }
+
+      return builder;
+    }
+
     return ListTile(
       onTap: () {
         Navigator.push(
@@ -90,15 +97,18 @@ class ItemLayout extends StatelessWidget {
       ),
       title: Text(item.name, style: nameStyle, textAlign: TextAlign.left, maxLines: 1,),
       subtitle: Text(item.message, style: messageStyle, textAlign: TextAlign.left, maxLines: 2, overflow: TextOverflow.ellipsis,),
-      trailing: Text(item.date, style: infoStyle),
+      trailing: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: trailingBuilder(),
+      ),
       isThreeLine: true,
     );
   }
 }
 
-Route _createChatRoute(Item item) {
+Route _createChatRoute(model.Chat chat) {
   return PageRouteBuilder(
-    pageBuilder: (context, animation, secondaryAnimation) => Chat(name: item.name, lastSeen: item.date,),
+    pageBuilder: (context, animation, secondaryAnimation) => Chat(chat: chat),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       var begin = Offset(1.0, 0.0);
       var end = Offset.zero;
@@ -117,10 +127,27 @@ Route _createChatRoute(Item item) {
 // replace this function with the code in the examples
 Widget _myListView(BuildContext context) {
 
-  final List<Item> items = const <Item>[
-    const Item(name: "Bob", date: "10:20", message: "Let's talk about that.", icon: Icons.ac_unit),
-    const Item(name: "Alice", date: "Yesterday", message: "Just joined Lytat!", icon: Icons.access_alarm, state: ItemStates.highlighted),
-    const Item(name: "Carlos", date: "May 12", message: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed mauris enim, condimentum eget imperdiet id, facilisis vitae velit. Curabitur maximus tincidunt ex euismod rutrum.", icon: Icons.account_balance),
+  final List<model.Chat> items = <model.Chat>[
+    model.Chat(
+        name: "Bob",
+        lastSeen: "10:20",
+        timeoutStart: DateTime.now().toUtc().subtract(new Duration(minutes: 1)),
+        timeoutEnd: DateTime.now().toUtc().add(new Duration(minutes: 2)),
+        message: "Let's talk about that."
+    ),
+    model.Chat(
+        name: "Alice",
+        lastSeen: "Yesterday",
+        message: "Just joined Lytat!",
+        state: model.ChatStates.highlighted
+    ),
+    model.Chat(
+        name: "Carlos",
+        lastSeen: "May 12",
+        timeoutStart: DateTime.now().toUtc().subtract(new Duration(minutes: 5)),
+        timeoutEnd: DateTime.now().toUtc().add(new Duration(minutes: 1)),
+        message: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed mauris enim, condimentum eget imperdiet id, facilisis vitae velit. Curabitur maximus tincidunt ex euismod rutrum."
+    ),
   ];
 
   return new ListView.separated(
