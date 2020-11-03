@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 final GoogleSignIn googleSignIn = GoogleSignIn();
@@ -26,7 +27,15 @@ Future<String> signInWithGoogle() async {
     final User currentUser = _auth.currentUser;
     assert(user.uid == currentUser.uid);
 
-    print('signInWithGoogle succeeded: $user');
+    print('FIREBASE: sign in with Google succeeded: $user');
+
+    final QuerySnapshot result = await FirebaseFirestore.instance.collection('users').where('id', isEqualTo: user.uid).get();
+    final List <DocumentSnapshot> documents = result.docs;
+    if (documents.length == 0) {
+      FirebaseFirestore.instance.collection('users').doc(user.uid).set(
+          { 'nickname': user.displayName, 'photoUrl': user.photoURL, 'id': user.uid });
+      print('FIREBASE: New user $user added to Firestore');
+    }
 
     return '$user';
   }
@@ -37,5 +46,5 @@ Future<String> signInWithGoogle() async {
 Future<void> signOutGoogle() async {
   await googleSignIn.signOut();
 
-  print("User Signed Out");
+  print("FIREBASE: User signed out");
 }

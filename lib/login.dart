@@ -37,7 +37,7 @@ class _LoginState extends State<Login> {
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) {
-                  return Home();
+                  return Home(title: "Lytat");
                 },
               ),
             );

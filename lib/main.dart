@@ -2,8 +2,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:lytatapp/LoadingScreen.dart';
-
-import 'home.dart';
+import 'package:lytatapp/login.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,7 +35,7 @@ class MyApp extends StatelessWidget {
               visualDensity: VisualDensity.adaptivePlatformDensity,
             ),
             darkTheme: ThemeData.dark(),
-            home: Home(title: 'Lytat'),
+            home: Login(),
           );
         }
 
