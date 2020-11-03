@@ -1,6 +1,17 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 enum ChatStates {
   normal,
   highlighted
+}
+
+Chat parseDocument(DocumentSnapshot document) {
+  String nickname = document.data()['nickname'];
+  return Chat(
+      name: nickname,
+      message: "test123",
+      lastSeen: "never"
+  );
 }
 
 class Chat {
@@ -19,3 +30,4 @@ class Chat {
     return durationNow.inMilliseconds / durationTimeout.inMilliseconds;
   }
 }
+

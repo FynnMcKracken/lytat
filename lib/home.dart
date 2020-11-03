@@ -1,11 +1,11 @@
-import 'dart:math';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:lytatapp/navigation_drawer.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 
 import 'chat.dart';
 import 'model/Chat.dart' as model;
+import 'tools/Tools.dart' as tools;
 
 
 class Home extends StatefulWidget {
@@ -36,6 +36,13 @@ class _HomeState extends State<Home> {
         title: Text(widget.title),
       ),
       body: HomeBodyLayout(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // New message/chat
+        },
+        child: Icon(Icons.messenger, color: Colors.white,),
+        backgroundColor: Colors.lightBlue,
+      ),
     );
   }
 }
@@ -44,7 +51,26 @@ class _HomeState extends State<Home> {
 class HomeBodyLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return _myListView(context);
+
+    var builder = StreamBuilder(
+      stream: FirebaseFirestore.instance.collection('users').snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return Center(child: new CircularProgressIndicator());
+        } else {
+          List<DocumentSnapshot> documents = snapshot.data.documents;
+          List<model.Chat> chats = documents.map((doc) => model.parseDocument(doc)).toList();
+          return _myListView(context, chats);
+        }
+      },
+    );
+
+    return Container(
+      child: builder
+    );
+
+
+    //return _myListView(context);
   }
 }
 
@@ -93,7 +119,7 @@ class ItemLayout extends StatelessWidget {
       },
       leading: CustomPaint(
           size: Size(55,55),
-          painter: CirclePainter(character: item.name.substring(0,1), color: Colors.primaries[Random().nextInt(Colors.primaries.length)])
+          painter: CirclePainter(character: item.name.substring(0,1), color: tools.colorFor(item.name))
       ),
       title: Text(item.name, style: nameStyle, textAlign: TextAlign.left, maxLines: 1,),
       subtitle: Text(item.message, style: messageStyle, textAlign: TextAlign.left, maxLines: 2, overflow: TextOverflow.ellipsis,),
@@ -125,9 +151,9 @@ Route _createChatRoute(model.Chat chat) {
 }
 
 // replace this function with the code in the examples
-Widget _myListView(BuildContext context) {
+Widget _myListView(BuildContext context, List<model.Chat> items) {
 
-  final List<model.Chat> items = <model.Chat>[
+  /*final List<model.Chat> items = <model.Chat>[
     model.Chat(
         name: "Bob",
         lastSeen: "10:20",
@@ -148,7 +174,7 @@ Widget _myListView(BuildContext context) {
         timeoutEnd: DateTime.now().toUtc().add(new Duration(minutes: 1)),
         message: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed mauris enim, condimentum eget imperdiet id, facilisis vitae velit. Curabitur maximus tincidunt ex euismod rutrum."
     ),
-  ];
+  ];*/
 
   return new ListView.separated(
     itemCount: items.length,
